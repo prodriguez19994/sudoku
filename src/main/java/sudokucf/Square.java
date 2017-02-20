@@ -25,11 +25,11 @@ public class Square {
    * The current possible choices for the square. It starts being the full [1;9] range, and hopefully ends with a single value: the result!
    */
   private Set<Integer> possibilities = new HashSet<>();
-
+  
   /**
    * A mapping between integer values and some CF. These CF will be triggered when it appears that an integer value cannot be the resolved value of this Square.
    */
-  private final Map<Integer, CompletableFuture<Void>> integerIsNotPossible = new HashMap<>();
+  private final Map<Integer, CompletableFuture<Integer>> integerIsNotPossible = new HashMap<>();
 
   /**
    * A CF that triggers when the Square is resolved. The future value is the Integer value of the Square.
@@ -48,6 +48,15 @@ public class Square {
     return this.resolved;
   }
 
+  /**
+   * Returns the trigger associated to <b>impossible</b> that will fire when <b>impossible</b> becomes impossible.
+   * @param impossible The integer for which we want the impossibility trigger.
+   * @return The CF trigger.
+   */
+  public CompletableFuture<Integer> getImpossible(Integer impossible){
+      return this.integerIsNotPossible.get(impossible);
+  }
+  
   /**
    * Checks that one unique value remains in {@link #possibilities} and returns this value.
    * 
@@ -105,4 +114,8 @@ public class Square {
     this.completeResolvedIfNeeded();
   }
 
+  public boolean isPossible(Integer i){
+      return this.possibilities.contains(i);
+  }
+  
 }
