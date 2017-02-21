@@ -103,4 +103,13 @@ public class Constraints {
 		});
 
 	}
+
+  public static void addConstraints(Grid grid) {
+    addVerticalConstraints(grid);
+    addHorizontalConstraints(grid);
+    addBlockConstraints(grid);
+    addOnlyMeVerticalConstraints(grid);
+    addOnlyMeHorizontalConstraints(grid);
+    addOnlyMeBlockConstraints(grid);
+  }
 }

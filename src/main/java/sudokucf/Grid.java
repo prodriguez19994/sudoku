@@ -21,6 +21,39 @@ public class Grid {
     });
   }
 
+  /**
+   * Builds a grid from a string. The string shall look like
+   * <blockquote>
+   * 2..8.4..7
+   * ..6...5..
+   * </blockquote>
+   * concatenated as a String of length 9x9=81. 
+   * @param input The input string
+   * @return The grid ready for resolution.
+   */
+  public static Grid build(String input){
+    assert (input.length() == 81);
+    Grid grid = new Grid();
+    
+    char[] startingPoints = input.toCharArray();
+    for (int a = 0; a < 81; a++){
+      final int j = 9 - a / 9 ;
+      final int i = a - 9 * ( a / 9 ) + 1;
+
+      final char s = startingPoints[a];
+      try{
+        Integer value = Integer.parseInt(String.valueOf(s));
+        assert (Square.RANGE_1_9.contains(value));
+        grid.getSquare(i, j).resolve(value);
+      }
+      catch (Exception e) {
+        // Left blank
+      }
+    }
+    
+    return grid;
+  }
+  
   public Square getSquare(Integer i, Integer j) {
     return this.coordToSquare.get(new Coordinate(i, j));
   }
@@ -140,12 +173,7 @@ public class Grid {
   public static void main(String[] args) {
     Grid grid = new Grid();
 
-    Constraints.addVerticalConstraints(grid);
-    Constraints.addHorizontalConstraints(grid);
-    Constraints.addBlockConstraints(grid);
-    Constraints.addOnlyMeVerticalConstraints(grid);
-    Constraints.addOnlyMeHorizontalConstraints(grid);
-    Constraints.addOnlyMeBlockConstraints(grid);
+    Constraints.addConstraints(grid);
 
     grid.getSquare(1, 1).resolve(9);
     grid.getSquare(6, 1).resolve(7);
@@ -181,7 +209,6 @@ public class Grid {
 
     System.out.println(grid.toString());
     System.out.println(grid.isResolved() ? "Grid is resolved" : "Grid is _not_ resolved.");
-
   }
 
 }
