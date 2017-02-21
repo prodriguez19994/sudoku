@@ -25,8 +25,7 @@ public class Grid {
     return this.coordToSquare.get(new Coordinate(i, j));
   }
 
-  @Override
-  public String toString() {
+  public String list() {
     StringJoiner sj = new StringJoiner("\n");
 
     Square.RANGE_1_9.stream().forEach(i -> {
@@ -38,6 +37,49 @@ public class Grid {
         sj.add("(" + i + ", " + j + ") " + s);
       });
     });
+
+    return sj.toString();
+
+  }
+
+  @Override
+  public String toString() {
+
+    StringJoiner sj = new StringJoiner("\n");
+
+    for (int j = 9; j > 0; j--) {
+
+      StringJoiner line = new StringJoiner("");
+
+      for (int i = 1; i < 10; i++) {
+        Square square = this.getSquare(i, j);
+        for (int k = 7; k < 10; k++) {
+          line.add(square.isPossible(k) ? String.valueOf(k) : ".");
+        }
+        line.add("|");
+      }
+      line.add("\n");
+
+      for (int i = 1; i < 10; i++) {
+        Square square = this.getSquare(i, j);
+        for (int k = 4; k < 7; k++) {
+          line.add(square.isPossible(k) ? String.valueOf(k) : ".");
+        }
+        line.add("|");
+      }
+      line.add("\n");
+
+      for (int i = 1; i < 10; i++) {
+        Square square = this.getSquare(i, j);
+        for (int k = 1; k < 4; k++) {
+          line.add(square.isPossible(k) ? String.valueOf(k) : ".");
+        }
+        line.add("|");
+      }
+
+      sj.add(line.toString());
+      sj.add("------------------------------------");
+    }
 
     return sj.toString();
   }
