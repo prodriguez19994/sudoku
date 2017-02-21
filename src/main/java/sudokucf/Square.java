@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.IntStream;
 
@@ -13,23 +15,24 @@ import java.util.stream.IntStream;
 public class Square {
 
   /**
-   * All the possible values (i.e. [1;9]).
+   * All the possible values (i.e. [1;9]). It is a SortedSet for displaying purpose: I like the squares to be in the correct order.
    */
-  public static Set<Integer> ALL_POSSIBILITIES = new HashSet<>();
+  public static final SortedSet<Integer> RANGE_1_9 = new TreeSet<>();
 
   static {
-    IntStream.rangeClosed(1, 9).forEach(ALL_POSSIBILITIES::add);
+    IntStream.rangeClosed(1, 9).forEach(RANGE_1_9::add);
   }
 
   /**
    * The current possible choices for the square. It starts being the full [1;9] range, and hopefully ends with a single value: the result!
    */
   private Set<Integer> possibilities = new HashSet<>();
-  
+
   /**
-   * A mapping between integer values and some CF. These CF will be triggered when it appears that an integer value cannot be the resolved value of this Square.
+   * A mapping between integer values and some CF. These CF will be triggered when it appears that an integer value cannot be the resolved value of this Square. While it may sound redundant, the CF
+   * will return the impossible Integer in order to ease the job downstream.
    */
-  private final Map<Integer, CompletableFuture<Integer>> integerIsNotPossible = new HashMap<>();
+  private final Map<Integer, CompletableFuture<Integer>> impossibilities = new HashMap<>();
 
   /**
    * A CF that triggers when the Square is resolved. The future value is the Integer value of the Square.
@@ -38,7 +41,7 @@ public class Square {
 
   public Square() {
     IntStream.rangeClosed(1, 9).forEach(this.possibilities::add);
-    IntStream.rangeClosed(1, 9).forEach(i -> this.integerIsNotPossible.put(i, new CompletableFuture<>()));
+    IntStream.rangeClosed(1, 9).forEach(i -> this.impossibilities.put(i, new CompletableFuture<>()));
   }
 
   /**
@@ -50,13 +53,16 @@ public class Square {
 
   /**
    * Returns the trigger associated to <b>impossible</b> that will fire when <b>impossible</b> becomes impossible.
-   * @param impossible The integer for which we want the impossibility trigger.
+   * 
+   * @param impossible
+   *          The integer for which we want the impossibility trigger.
    * @return The CF trigger.
    */
-  public CompletableFuture<Integer> getImpossible(Integer impossible){
-      return this.integerIsNotPossible.get(impossible);
+  public CompletableFuture<Integer> getImpossible(Integer impossible) {
+    assert (RANGE_1_9.contains(impossible));
+    return this.impossibilities.get(impossible);
   }
-  
+
   /**
    * Checks that one unique value remains in {@link #possibilities} and returns this value.
    * 
@@ -92,7 +98,7 @@ public class Square {
    */
   public void resolve(Integer solution) {
     assert (!this.resolved.isDone());
-    assert (ALL_POSSIBILITIES.contains(solution));
+    assert (RANGE_1_9.contains(solution));
 
     final Set<Integer> tmp = new HashSet<>();
     tmp.add(solution);
@@ -114,8 +120,15 @@ public class Square {
     this.completeResolvedIfNeeded();
   }
 
-  public boolean isPossible(Integer i){
-      return this.possibilities.contains(i);
+  /**
+   * Checks if the integer <b>i</b> is still possible for the square.
+   * 
+   * @param i
+   *          The integer we want to check.
+   * @return See description.
+   */
+  public boolean isPossible(Integer i) {
+    return this.possibilities.contains(i);
   }
-  
+
 }
