@@ -18,9 +18,11 @@ public class Square {
    * All the possible values (i.e. [1;9]). It is a SortedSet for displaying purpose: I like the squares to be in the correct order.
    */
   public static final SortedSet<Integer> RANGE_1_9 = new TreeSet<>();
+  public static final SortedSet<Integer> RANGE_1_3 = new TreeSet<>(); // FIXME Should be somewhere else
 
   static {
     IntStream.rangeClosed(1, 9).forEach(RANGE_1_9::add);
+    IntStream.rangeClosed(1, 3).forEach(RANGE_1_3::add);
   }
 
   /**
@@ -52,6 +54,15 @@ public class Square {
   }
 
   /**
+   * Is the square resolved.
+   * 
+   * @return See description.
+   */
+  public boolean isResolved() {
+    return this.possibilities.size() == 1;
+  }
+
+  /**
    * Returns the trigger associated to <b>impossible</b> that will fire when <b>impossible</b> becomes impossible.
    * 
    * @param impossible
@@ -78,7 +89,9 @@ public class Square {
    * Completes the {@link #resolved} CF with the unique remaining values from the {@link #possibilities}.
    */
   private void completeResolved() {
-    this.resolved.complete(this.getResolvedValue());
+    if (!this.resolved.isDone()) {
+      this.resolved.complete(this.getResolvedValue());
+    }
   }
 
   /**
@@ -116,8 +129,10 @@ public class Square {
    *          The integer that cannot be part of the solution in this square.
    */
   public void remove(Integer impossible) {
-    this.possibilities.remove(impossible);
-    this.completeResolvedIfNeeded();
+    if (this.possibilities.size() != 1) {
+      this.possibilities.remove(impossible);
+      this.completeResolvedIfNeeded();
+    }
   }
 
   /**
