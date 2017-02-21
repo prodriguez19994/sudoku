@@ -2,6 +2,7 @@ package sudokucf;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class Constraints {
 
@@ -60,4 +61,46 @@ public class Constraints {
       });
     });
   }
+  
+  /**
+   * If a given integer cannot be in all other squares nodes, then it means that it must be the result of the last node.
+   * @param squares
+   *          The squares we want to be tied with this constraint. It is the role of the client code to provide a smart set.
+   */
+  private static void addOnlyMeConstraints(Set<Square> squares) {
+    for (Square square : squares) {
+      Set<Square> otherSquares = squares.stream().filter(s -> !square.equals(s)).collect(Collectors.toSet());
+      for (int k = 1; k < 10; k++) {
+        final int k2 = k;
+        CompletableFuture<Void>[] tmp = otherSquares.stream().map(os -> os.getImpossible(k2))
+                                                             .toArray(CompletableFuture[]::new);
+        CompletableFuture<Void> notTheOthers = CompletableFuture.allOf(tmp);
+        notTheOthers.thenRun(() -> square.resolve(k2));
+      }
+    }
+  }
+
+  public static void addOnlyMeHorizontalConstraints(Grid grid){
+    Square.RANGE_1_9.stream().forEach(i -> {
+      Set<Square> horizontalSquares = grid.getHorizontalSquares(i);
+      addOnlyMeConstraints(horizontalSquares);
+    });
+  }
+  
+  public static void addOnlyMeVerticalConstraints(Grid grid){
+    Square.RANGE_1_9.stream().forEach(j -> {
+      Set<Square> verticalSquares = grid.getVerticalSquares(j);
+      addOnlyMeConstraints(verticalSquares);
+    });
+  }
+  
+	public static void addOnlyMeBlockConstraints(Grid grid) {
+		Square.RANGE_1_3.stream().forEach(i -> {
+			Square.RANGE_1_3.stream().forEach(j -> {
+				Set<Square> blockSquares = grid.getBlockSquares(i, j);
+				addOnlyMeConstraints(blockSquares);
+			});
+		});
+
+	}
 }

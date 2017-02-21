@@ -110,16 +110,12 @@ public class Square {
    *          The solution of the square in the sudoku.
    */
   public void resolve(Integer solution) {
-    assert (!this.resolved.isDone());
-    assert (RANGE_1_9.contains(solution));
+    assert (!this.resolved.isDone()); // FIXME I shall check that value is the same and log a possible error...
+    assert (this.possibilities.contains(solution));
 
-    final Set<Integer> tmp = new HashSet<>();
-    tmp.add(solution);
-    this.possibilities = tmp;
-
+    RANGE_1_9.stream().filter(i -> !i.equals(solution)).forEach(this::remove);
+    
     assert (this.getResolvedValue().equals(solution));
-
-    this.completeResolved();
   }
 
   /**
@@ -131,6 +127,7 @@ public class Square {
   public void remove(Integer impossible) {
     if (this.possibilities.size() != 1) {
       this.possibilities.remove(impossible);
+      this.impossibilities.get(impossible).complete(impossible);
       this.completeResolvedIfNeeded();
     }
   }
@@ -145,5 +142,4 @@ public class Square {
   public boolean isPossible(Integer i) {
     return this.possibilities.contains(i);
   }
-
 }

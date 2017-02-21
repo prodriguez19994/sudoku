@@ -143,6 +143,9 @@ public class Grid {
     Constraints.addVerticalConstraints(grid);
     Constraints.addHorizontalConstraints(grid);
     Constraints.addBlockConstraints(grid);
+    Constraints.addOnlyMeVerticalConstraints(grid);
+    Constraints.addOnlyMeHorizontalConstraints(grid);
+    Constraints.addOnlyMeBlockConstraints(grid);
 
     grid.getSquare(1, 1).resolve(9);
     grid.getSquare(6, 1).resolve(7);
