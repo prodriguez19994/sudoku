@@ -39,7 +39,7 @@ public class TestGrid {
   }
 
   @Test(dataProviderClass = TestGridProvider.class, dataProvider = TestGridProvider.NAME)
-  public void testGrid3(Grid grid) {
+  public void testResolve(Grid grid) {
     Constraints.addConstraints(grid);
 
     if (!grid.isResolved()) {
