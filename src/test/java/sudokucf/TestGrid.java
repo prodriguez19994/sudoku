@@ -1,53 +1,52 @@
 package sudokucf;
 
-import java.util.StringJoiner;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class TestGrid {
 
-  @Test
-  public void testGrid() {
+  public static boolean isValid(Grid grid) {
 
-    StringJoiner sj = new StringJoiner("");
-    
-    sj.add("..68....1");
-    sj.add(".5..7..2.");
-    sj.add("4.....3..");
-    sj.add("6....4...");
-    sj.add(".2..5..8.");
-    sj.add("...6....5");
-    sj.add("..7.....9");
-    sj.add(".8..4..5.");
-    sj.add("9....74..");
-    
-    Grid grid = Grid.build(sj.toString());
-    
-    Constraints.addConstraints(grid);
-    
-    Assert.assertTrue(grid.isResolved());
+    for (Integer i : Square.RANGE_1_9) {
+      for (Integer j : Square.RANGE_1_9) {
+        Square square = grid.getSquare(i, j);
+        if (!square.isResolved()) { return false; }
+      }
+    }
+
+    // Extracts all the values of the squares and compares them with the [1;9] range.
+    Predicate<Set<Square>> isLineValid = squares -> {
+      Set<Integer> lineResults = squares.stream().map(s -> s.getResolved().getNow(-1)).collect(Collectors.toSet());
+      return Square.RANGE_1_9.equals(lineResults);
+    };
+
+    for (Integer l : Square.RANGE_1_9) {
+      if (!isLineValid.test(grid.getVerticalSquares(l))) { return false; }
+      if (!isLineValid.test(grid.getHorizontalSquares(l))) { return false; }
+    }
+
+    for (Integer i : Square.RANGE_1_3) {
+      for (Integer j : Square.RANGE_1_3) {
+        if (!isLineValid.test(grid.getBlockSquares(i, j))) { return false; }
+      }
+    }
+
+    return true;
   }
 
-  @Test
-  public void testGrid2() {
-
-    StringJoiner sj = new StringJoiner("");
-    
-    sj.add("2..8.4..7");
-    sj.add("..6...5..");
-    sj.add(".74...92.");
-    sj.add("3...4...7");
-    sj.add("...3.5...");
-    sj.add("4...6...9");
-    sj.add(".19...74.");
-    sj.add("..8...2..");
-    sj.add("5..6.8..1");
-    
-    Grid grid = Grid.build(sj.toString());
-    
+  @Test(dataProviderClass = TestGridProvider.class, dataProvider = TestGridProvider.NAME)
+  public void testGrid3(Grid grid) {
     Constraints.addConstraints(grid);
-    
+
+    if (!grid.isResolved()) {
+      System.err.println(grid.toString());
+    }
+
     Assert.assertTrue(grid.isResolved());
+    Assert.assertTrue(isValid(grid), grid.toString());
   }
 }

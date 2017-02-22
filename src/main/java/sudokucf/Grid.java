@@ -22,26 +22,25 @@ public class Grid {
   }
 
   /**
-   * Builds a grid from a string. The string shall look like
-   * <blockquote>
-   * 2..8.4..7
-   * ..6...5..
-   * </blockquote>
-   * concatenated as a String of length 9x9=81. 
-   * @param input The input string
+   * Builds a grid from a string. The string shall look like <br>
+   * 2..8.4..7..6...5.. </br>
+   * concatenated as a String of length 9x9=81.
+   * 
+   * @param input
+   *          The input string
    * @return The grid ready for resolution.
    */
-  public static Grid build(String input){
+  public static Grid build(String input) {
     assert (input.length() == 81);
     Grid grid = new Grid();
-    
+
     char[] startingPoints = input.toCharArray();
-    for (int a = 0; a < 81; a++){
-      final int j = 9 - a / 9 ;
-      final int i = a - 9 * ( a / 9 ) + 1;
+    for (int a = 0; a < 81; a++) {
+      final int j = 9 - a / 9;
+      final int i = a - 9 * (a / 9) + 1;
 
       final char s = startingPoints[a];
-      try{
+      try {
         Integer value = Integer.parseInt(String.valueOf(s));
         assert (Square.RANGE_1_9.contains(value));
         grid.getSquare(i, j).resolve(value);
@@ -50,10 +49,10 @@ public class Grid {
         // Left blank
       }
     }
-    
+
     return grid;
   }
-  
+
   public Square getSquare(Integer i, Integer j) {
     return this.coordToSquare.get(new Coordinate(i, j));
   }
