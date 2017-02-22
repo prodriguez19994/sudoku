@@ -104,7 +104,6 @@ public class Constraints {
         addOnlyMeConstraints(blockSquares);
       });
     });
-
   }
 
   public static void addConstraints(Grid grid) {
