@@ -1,8 +1,12 @@
 package sudokucf;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Scanner;
 import java.util.stream.Collectors;
 
 import org.testng.annotations.DataProvider;
@@ -12,9 +16,9 @@ public class TestGridProvider {
   public static final String NAME = "GRID_PROVIDER";
 
   // http://www2.warwick.ac.uk/fac/sci/moac/people/students/peter_cock/python/sudoku/
-  
+
   // from http://la-conjugaison.nouvelobs.com/sudoku/grille.php?niveau=difficile&grille=1
-  public static List<String> provideDiffcultGrids(){
+  public static List<String> provideDiffcultGrids() {
     List<String> gridStrings = new ArrayList<>();
 
     // FIXME use resources file and download from some web site.
@@ -23,11 +27,11 @@ public class TestGridProvider {
     gridStrings.add(".7.1.....1...4.5..58.7.......7.31..52.5...6.19..45.8.......2.19..3.9...2.....4.6.");
     gridStrings.add("7..9..8....6..8.979...36.52.5.19.................84.3.12.37...486.2..9....4..9..1");
 
-    return gridStrings;    
+    return gridStrings;
   }
-  
+
   // from http://la-conjugaison.nouvelobs.com/sudoku/grille.php?niveau=diabolique&grille=1
-  public static List<String> provideDiabolicGrids(){
+  public static List<String> provideDiabolicGrids() {
     List<String> gridStrings = new ArrayList<>();
 
     //gridStrings.add("..8.....2.6.2.1.4.7...6..9....1725....9...4....1349....4..1...6.5.8.6.1.1.....2..");
@@ -35,10 +39,10 @@ public class TestGridProvider {
     gridStrings.add("6.......44...5..9.9.2..4.6...94.1...8.3...9.6...3.82...7.2..4.9.2..3...85.......3");
     //gridStrings.add("3..8.5..2.7..23.......7...3..97..52...2...8...16..23..6...4.......29..4.9..5.1..6");
 
-    return gridStrings;    
+    return gridStrings;
   }
-  
-  public static List<String> provideEasyGrids(){
+
+  public static List<String> provideEasyGrids() {
     List<String> gridStrings = new ArrayList<>();
 
     gridStrings.add("..68....1.5..7..2.4.....3..6....4....2..5..8....6....5..7.....9.8..4..5.9....74..");
@@ -47,18 +51,32 @@ public class TestGridProvider {
     gridStrings.add("9...312.4...7.....8.1..5..9..3.1...7.....465.4...57198.1286..4.....7...1.5.1..3..");
     gridStrings.add("53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79");
 
-    return gridStrings;    
+    return gridStrings;
   }
-  
-  
+
+  public static List<String> provideGridsFromFile(String fileName) {
+    InputStream gridStringsStream = TestGridProvider.class.getResourceAsStream(fileName);
+    InputStreamReader inputStreamReader = new InputStreamReader(gridStringsStream);
+    Scanner scanner = new Scanner(inputStreamReader).useDelimiter("\n");
+    List<String> rawLines = new LinkedList<>();
+    while (scanner.hasNext()) {
+      rawLines.add(scanner.next());
+    }
+    scanner.close();
+
+    return rawLines.stream().filter(s -> !s.startsWith("#")).map(String::trim).collect(Collectors.toList());
+  }
+
   @DataProvider(name = NAME)
   public static Iterator<Grid> solveGrids() {
     List<String> gridStrings = new ArrayList<>();
-    
+
     gridStrings.addAll(provideEasyGrids());
     gridStrings.addAll(provideDiffcultGrids());
     gridStrings.addAll(provideDiabolicGrids());
-    
+
+    gridStrings.addAll(provideGridsFromFile("/top95.txt"));
+
     List<Grid> grids = gridStrings.stream().map(Grid::build).collect(Collectors.toList());
 
     return grids.iterator();
