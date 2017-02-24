@@ -76,6 +76,8 @@ public class TestGridProvider {
     gridStrings.addAll(provideDiabolicGrids());
 
     gridStrings.addAll(provideGridsFromFile("/top95.txt"));
+    //    gridStrings.add("123......456.....................................................................");
+    //    gridStrings.add("12.......34.......56.............................................................");
 
     List<Grid> grids = gridStrings.stream().map(Grid::build).collect(Collectors.toList());
 

@@ -1,66 +1,55 @@
 package sudokucf;
 
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class Constraints {
 
+  // FIXME Factorize the addLineConstraints and the addBlockConstraints functions.
   /**
-   * The sudoku rules says there shall not be the same number on vertical lines, horizontal lines and blocks. This functions will impose this rule on the <b>squares</b>.
+   * The sudoku rules says there shall not be the same number on vertical lines, horizontal lines and blocks. This function imposes this rule on all the verticals.
    * 
-   * @param squares
-   *          The squares we want to be tied with the sudoku rule. It is the role of the client code to provide a smart set.
+   * @param grid
+   *          The sudoku grid.
    */
-  private static void addConstraint(Set<Square> squares) {
-    for (Square potentiallyResolvedSquare : squares) {
-      CompletableFuture<Integer> resolved = potentiallyResolvedSquare.getResolved();
-      // I could remove the potentiallyResolvedSquare from the list, but the remove member function will do nothing on it, so I don't mind.
-      for (Square square : squares) {
-        resolved.thenAccept(solution -> square.remove(solution));
+  public static void addLineConstraints(Grid grid) {
+    for (Integer i : Square.RANGE_1_9) {
+      for (Integer j : Square.RANGE_1_9) {
+        // For each square of the grid that may be solved...
+        Square potentiallyResolved = grid.getSquare(i, j);
+        // ... then all the other squares on the same line...
+        Set<Square> hollowCrossSquares = grid.getHollowCross(i, j);
+        // ... cannot be solved with the same value.
+        CompletableFuture<Integer> resolved = potentiallyResolved.getResolved();
+        for (Square square : hollowCrossSquares) {
+          resolved.thenAccept(square::remove);
+        }
       }
     }
   }
 
   /**
-   * Vertical sudoku rule: no square shall have the same number on the same line.
+   * The sudoku rules says there shall not be the same number on vertical lines, horizontal lines and blocks. This function imposes this rule on all the 3x4 blocks.
    * 
    * @param grid
-   *          The sudoku grid
-   */
-  public static void addVerticalConstraints(Grid grid) {
-    Square.RANGE_1_9.stream().forEach(j -> {
-      Set<Square> verticalSquares = grid.getVerticalSquares(j);
-      addConstraint(verticalSquares);
-    });
-  }
-
-  /**
-   * Horizontal sudoku rule: no square shall have the same number on the same line.
-   * 
-   * @param grid
-   *          The sudoku grid
-   */
-  public static void addHorizontalConstraints(Grid grid) {
-    Square.RANGE_1_9.stream().forEach(i -> {
-      Set<Square> verticalSquares = grid.getHorizontalSquares(i);
-      addConstraint(verticalSquares);
-    });
-  }
-
-  /**
-   * Block sudoku rule: no square shall have the same number in the same block.
-   * 
-   * @param grid
-   *          The sudoku grid
+   *          The sudoku grid.
    */
   public static void addBlockConstraints(Grid grid) {
-    Square.RANGE_1_3.stream().forEach(i -> {
-      Square.RANGE_1_3.stream().forEach(j -> {
-        Set<Square> blockSquares = grid.getBlockSquares(i, j);
-        addConstraint(blockSquares);
-      });
-    });
+    for (Integer i : Square.RANGE_1_9) {
+      for (Integer j : Square.RANGE_1_9) {
+        // For each square of the grid that may be solved...
+        Square potentiallyResolved = grid.getSquare(i, j);
+        // ... then all the other squares on the same line...
+        Set<Square> hollowBlockSquares = grid.getHollowBlock(i, j);
+        // ... cannot be solved with the same value.
+        CompletableFuture<Integer> resolved = potentiallyResolved.getResolved();
+        for (Square square : hollowBlockSquares) {
+          resolved.thenAccept(square::remove);
+        }
+      }
+    }
   }
 
   /**
@@ -71,47 +60,90 @@ public class Constraints {
    */
   private static void addOnlyMeConstraints(Set<Square> squares) {
     for (Square square : squares) {
-      Set<Square> otherSquares = squares.stream().filter(s -> !square.equals(s)).collect(Collectors.toSet());
-      for (int k = 1; k < 10; k++) {
-        final int k2 = k;
-        CompletableFuture<Void>[] tmp = otherSquares.stream()
-                                                    .map(os -> os.getImpossible(k2))
-                                                    .toArray(CompletableFuture[]::new);
-        CompletableFuture<Void> notTheOthers = CompletableFuture.allOf(tmp);
-        notTheOthers.thenRun(() -> square.resolve(k2));
+      Set<Square> otherSquares = squares.stream()
+                                        .filter(s -> !square.equals(s))
+                                        .collect(Collectors.toSet());
+      for (Integer solution : Square.RANGE_1_9) {
+        CompletableFuture<Integer>[] tmp = otherSquares.stream()
+                                                       .map(os -> os.getImpossible(solution))
+                                                       .toArray(CompletableFuture[]::new);
+        CompletableFuture<Void> solutionImpossibleInTheOthers = CompletableFuture.allOf(tmp);
+        solutionImpossibleInTheOthers.thenRun(() -> square.resolve(solution));
       }
     }
   }
 
-  public static void addOnlyMeHorizontalConstraints(Grid grid) {
-    Square.RANGE_1_9.stream().forEach(i -> {
-      Set<Square> horizontalSquares = grid.getHorizontalSquares(i);
-      addOnlyMeConstraints(horizontalSquares);
-    });
-  }
-
-  public static void addOnlyMeVerticalConstraints(Grid grid) {
-    Square.RANGE_1_9.stream().forEach(j -> {
-      Set<Square> verticalSquares = grid.getVerticalSquares(j);
-      addOnlyMeConstraints(verticalSquares);
-    });
+  public static void addOnlyMeLineConstraints(Grid grid) {
+    for (Integer k : Square.RANGE_1_9) {
+      for (Grid.Direction d : Grid.Direction.values()) {
+        Set<Square> lineSquares = grid.getLine(d, k);
+        addOnlyMeConstraints(lineSquares);
+      }
+    }
   }
 
   public static void addOnlyMeBlockConstraints(Grid grid) {
     Square.RANGE_1_3.stream().forEach(i -> {
       Square.RANGE_1_3.stream().forEach(j -> {
-        Set<Square> blockSquares = grid.getBlockSquares(i, j);
+        Set<Square> blockSquares = grid.getBlock(i, j);
         addOnlyMeConstraints(blockSquares);
       });
     });
   }
 
+  // FIXME Factorise horizontal and vertical parts. Add tests! 
+  public static void addBlockColumnInteractionConstraints(Grid grid) {
+    // For all the 3x3 blocks
+    for (Integer blockI : Square.RANGE_1_3) {
+      for (Integer blockJ : Square.RANGE_1_3) {
+        // For all the 3 layers/rows of the current block...
+        for (Integer layer : Square.RANGE_1_3) {
+          // ... then I consider the 2 other layers/rows...
+          TreeSet<Integer> otherLayers = new TreeSet<>(Square.RANGE_1_3);
+          otherLayers.remove(layer);
+
+          // ... and I consider the 2 other 3x3 blocks in the same horizontal.
+          TreeSet<Integer> otherBlockIs = new TreeSet<>(Square.RANGE_1_3);
+          otherBlockIs.remove(blockI); // FIXME Move up in the loop.
+          TreeSet<Integer> otherBlockJs = new TreeSet<>(Square.RANGE_1_3);
+          otherBlockJs.remove(blockJ); // FIXME Move up in the loop.
+
+          Set<Square> impossibleHorizontalSquares = grid.getHorizontalSubSquare(blockI, blockJ, otherLayers);
+          Set<Square> otherHorizontalSquares = grid.getHorizontalSubSquare(otherBlockIs, blockJ, layer);
+
+          Set<Square> impossibleVerticalSquares = grid.getVerticalSubSquare(blockI, blockJ, otherLayers);
+          Set<Square> otherVerticalSquares = grid.getVerticalSubSquare(blockI, otherBlockJs, layer);
+
+          for (Integer value : Square.RANGE_1_9) {
+            CompletableFuture<Integer>[] horizontalImpossibles = impossibleHorizontalSquares.stream()
+                                                                                            .map(
+                                                                                                isq -> isq.getImpossible(
+                                                                                                    value))
+                                                                                            .toArray(
+                                                                                                CompletableFuture[]::new);
+            for (Square otherHorizontalSquare : otherHorizontalSquares) {
+              CompletableFuture.allOf(horizontalImpossibles).thenRunAsync(() -> otherHorizontalSquare.remove(value));
+            }
+            CompletableFuture<Integer>[] verticalImpossibles = impossibleVerticalSquares.stream()
+                                                                                        .map(
+                                                                                            isq -> isq.getImpossible(
+                                                                                                value))
+                                                                                        .toArray(
+                                                                                            CompletableFuture[]::new);
+            for (Square otherVerticalSquare : otherVerticalSquares) {
+              CompletableFuture.allOf(verticalImpossibles).thenRunAsync(() -> otherVerticalSquare.remove(value));
+            }
+          }
+        }
+      }
+    }
+  }
+
   public static void addConstraints(Grid grid) {
-    addVerticalConstraints(grid);
-    addHorizontalConstraints(grid);
+    addLineConstraints(grid);
     addBlockConstraints(grid);
-    addOnlyMeVerticalConstraints(grid);
-    addOnlyMeHorizontalConstraints(grid);
+    addOnlyMeLineConstraints(grid);
     addOnlyMeBlockConstraints(grid);
+    addBlockColumnInteractionConstraints(grid);
   }
 }

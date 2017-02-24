@@ -25,13 +25,13 @@ public class TestGrid {
     };
 
     for (Integer l : Square.RANGE_1_9) {
-      if (!isLineValid.test(grid.getVerticalSquares(l))) { return false; }
-      if (!isLineValid.test(grid.getHorizontalSquares(l))) { return false; }
+      if (!isLineValid.test(grid.getVerticalLine(l))) { return false; }
+      if (!isLineValid.test(grid.getHorizontalLine(l))) { return false; }
     }
 
     for (Integer i : Square.RANGE_1_3) {
       for (Integer j : Square.RANGE_1_3) {
-        if (!isLineValid.test(grid.getBlockSquares(i, j))) { return false; }
+        if (!isLineValid.test(grid.getBlock(i, j))) { return false; }
       }
     }
 

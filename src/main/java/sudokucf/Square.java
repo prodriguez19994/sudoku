@@ -28,7 +28,7 @@ public class Square {
   /**
    * The current possible choices for the square. It starts being the full [1;9] range, and hopefully ends with a single value: the result!
    */
-  private Set<Integer> possibilities = new HashSet<>();
+  private final Set<Integer> possibilities = new HashSet<>();
 
   /**
    * A mapping between integer values and some CF. These CF will be triggered when it appears that an integer value cannot be the resolved value of this Square. While it may sound redundant, the CF
@@ -41,9 +41,29 @@ public class Square {
    */
   private final CompletableFuture<Integer> resolved = new CompletableFuture<>();
 
-  public Square() {
+  /**
+   * Horizontal coordinate
+   */
+  private Integer i;
+
+  /**
+   * Vertical coordinate
+   */
+  private Integer j;
+
+  public Integer getI() {
+    return this.i;
+  }
+
+  public Integer getJ() {
+    return this.j;
+  }
+
+  public Square(Integer i, Integer j) {
+    this.i = i;
+    this.j = j;
     IntStream.rangeClosed(1, 9).forEach(this.possibilities::add);
-    IntStream.rangeClosed(1, 9).forEach(i -> this.impossibilities.put(i, new CompletableFuture<>()));
+    IntStream.rangeClosed(1, 9).forEach(k -> this.impossibilities.put(k, new CompletableFuture<>()));
   }
 
   /**
@@ -114,7 +134,7 @@ public class Square {
     assert (this.possibilities.contains(solution));
 
     RANGE_1_9.stream().filter(i -> !i.equals(solution)).forEach(this::remove);
-    
+
     assert (this.getResolvedValue().equals(solution));
   }
 

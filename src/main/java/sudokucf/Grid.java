@@ -1,8 +1,7 @@
 package sudokucf;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.Predicate;
@@ -10,13 +9,17 @@ import java.util.stream.Collectors;
 
 public class Grid {
 
-  private final Map<Coordinate, Square> coordToSquare = new HashMap<>();
+  public enum Direction {
+    HORIZONTAL, VERTICAL
+  }
+
+  private final List<Square> squares = new ArrayList<>();
 
   public Grid() {
     // Building all the squares of the grid.
     Square.RANGE_1_9.stream().forEach(i -> {
       Square.RANGE_1_9.stream().forEach(j -> {
-        this.coordToSquare.put(new Coordinate(i, j), new Square());
+        this.squares.add(new Square(i, j));
       });
     });
   }
@@ -54,7 +57,11 @@ public class Grid {
   }
 
   public Square getSquare(Integer i, Integer j) {
-    return this.coordToSquare.get(new Coordinate(i, j));
+    Square[] oneSquare = this.squares.stream()
+                                   .filter(square -> square.getI().equals(i) && square.getJ().equals(j))
+                                   .toArray(Square[]::new);
+    assert (oneSquare.length == 1);
+    return oneSquare[0];
   }
 
   public String list() {
@@ -123,41 +130,159 @@ public class Grid {
    *          The predicate that will select the square.
    * @return The selected squares.
    */
-  private Set<Square> getSquares(Predicate<Entry<Coordinate, Square>> predicate) {
-    return this.coordToSquare.entrySet()
-                             .stream()
-                             .filter(predicate)
-                             .map(e -> e.getValue())
-                             .collect(Collectors.toSet());
+  private Set<Square> getSquares(Predicate<Square> predicate) {
+    return this.squares.stream()
+                       .filter(predicate)
+                       .collect(Collectors.toSet());
   }
 
-  public Set<Square> getHorizontalSquares(Integer i) {
-    assert (Square.RANGE_1_9.contains(i));
-    return getSquares(e -> e.getKey().getI().equals(i));
+  public Set<Square> getLine(Direction direction, Integer k) {
+    assert (Square.RANGE_1_9.contains(k));
+    if (Direction.HORIZONTAL.equals(direction)) {
+      return getSquares(square -> square.getJ().equals(k));
+    }
+    else { // i.e. Direction.VERTICAL
+      return getSquares(square -> square.getI().equals(k));
+    }
   }
 
-  public Set<Square> getVerticalSquares(Integer j) {
-    assert (Square.RANGE_1_9.contains(j));
-    return getSquares(e -> e.getKey().getJ().equals(j));
+  /**
+   * Returns the vertical line of the grid.
+   * 
+   * @param i
+   *          The abscissa of the line.
+   * @return The squares.
+   */
+  public Set<Square> getVerticalLine(Integer i) {
+    return getLine(Direction.VERTICAL, i);
+  }
+
+  /**
+   * Returns the horizontal line of the grid.
+   * 
+   * @param j
+   *          The ordinate of the line.
+   * @return The squares.
+   */
+  public Set<Square> getHorizontalLine(Integer j) {
+    return getLine(Direction.HORIZONTAL, j);
+  }
+
+  /**
+   * Returns all the squares on the same line of the (<b>i</b>, <b>j</b>) square, but not the (<b>i</b>, <b>j</b>) square itself. This member function is designed to be used to build the constraint
+   * that there is one and only one value per line.
+   * 
+   * @param i
+   *          The abscissa of the square.
+   * @param j
+   *          The ordinate of the square.
+   * @return The squares.
+   */
+  public Set<Square> getHollowCross(Integer i, Integer j) {
+    return this.getSquares(square -> {
+      boolean b0 = ((square.getI() > i) || (square.getI() < i)) && square.getJ().equals(j);
+      boolean b1 = ((square.getJ() > j) || (square.getJ() < j)) && square.getI().equals(i);
+      return b1 || b0;
+    });
   }
 
   /**
    * Get the squares from a block.
    * 
-   * @param i
+   * @param blockI
    *          The block horizontal coordinate (must be in [1:3])
-   * @param j
+   * @param blockJ
    *          The block vertical coordiante (must be in [1:3]).
    * @return The squares making the block
    */
-  public Set<Square> getBlockSquares(Integer i, Integer j) {
-    assert (Square.RANGE_1_3.contains(i));
-    assert (Square.RANGE_1_3.contains(j));
-    return getSquares(e -> {
-      int blockCoordI = (e.getKey().getI() + 2) / 3;
-      int blockCoordJ = (e.getKey().getJ() + 2) / 3;
-      return i.equals(blockCoordI) && j.equals(blockCoordJ);
+  public Set<Square> getBlock(Integer blockI, Integer blockJ) {
+    assert (Square.RANGE_1_3.contains(blockI));
+    assert (Square.RANGE_1_3.contains(blockJ));
+    return getSquares(square -> {
+      int blockCoordI = (square.getI() + 2) / 3;
+      int blockCoordJ = (square.getJ() + 2) / 3;
+      return blockI.equals(blockCoordI) && blockJ.equals(blockCoordJ);
     });
+  }
+
+  public Set<Square> getHollowBlock(Integer i, Integer j) {
+    final int blockI = (i + 2) / 3;
+    final int blockJ = (j + 2) / 3;
+    return getSquares(square -> {
+      final int sqi = square.getI();
+      final int sqj = square.getJ();
+      int blockCoordI = (sqi + 2) / 3;
+      int blockCoordJ = (sqj + 2) / 3;
+      return blockI == blockCoordI && blockJ == blockCoordJ && !(sqi == i && sqj == j);
+    });
+  }
+
+  /**
+   * Returns the squares <b>layer</b>th length-3 line of the (i, j) block. in case <b>direction</b> is horizontal, then the <b>layer</b> will be horizontal. Vertical in otherwise.
+   * 
+   * @param direction
+   *          The layer direction.
+   * @param blockI
+   *          The 3x3 block coordinate (must be in [1;3]).
+   * @param blockJ
+   *          The 3x3 block coordinate (must be in [1;3]).
+   * @param layer
+   *          The row we want (must be in [1;3]).
+   * @return The matching squares.
+   */
+  public Set<Square> getSubSquare(Direction direction, Integer blockI, Integer blockJ, Integer layer) {
+    return getSquares(square -> {
+      int blockCoordI = (square.getI() + 2) / 3;
+      int blockCoordJ = (square.getJ() + 2) / 3;
+      int internalRelativeLayerCoord;
+      if (Direction.HORIZONTAL.equals(direction)) {
+        internalRelativeLayerCoord = square.getJ() - 3 * (blockCoordJ - 1);
+      }
+      else {
+        internalRelativeLayerCoord = square.getI() - 3 * (blockCoordI - 1);
+      }
+      return blockI.equals(blockCoordI) && blockJ.equals(blockCoordJ) && layer.equals(internalRelativeLayerCoord);
+    });
+  }
+
+  public Set<Square> getHorizontalSubSquare(Integer blockI, Integer blockJ, Integer layer) {
+    return getSubSquare(Direction.HORIZONTAL, blockI, blockJ, layer);
+  }
+
+  public Set<Square> getVerticalSubSquare(Integer blockI, Integer blockJ, Integer layer) {
+    return getSubSquare(Direction.VERTICAL, blockI, blockJ, layer);
+  }
+
+  public Set<Square> getHorizontalSubSquare(Set<Integer> blockIs, Integer blockJ, Integer layer) {
+    Set<Square> result = blockIs.stream()
+                                .map(i -> this.getHorizontalSubSquare(i, blockJ, layer))
+                                .flatMap(l -> l.stream())
+                                .collect(Collectors.toSet());
+    return result;
+  }
+
+  public Set<Square> getHorizontalSubSquare(Integer blockI, Integer blockJ, Set<Integer> layers) {
+    Set<Square> result = layers.stream()
+                               .map(layer -> this.getHorizontalSubSquare(blockI, blockJ, layer))
+                               .flatMap(l -> l.stream())
+                               .collect(Collectors.toSet());
+    return result;
+  }
+
+  public Set<Square> getVerticalSubSquare(Integer blockI, Set<Integer> blockJs, Integer layer) {
+    Set<Square> result = blockJs.stream()
+                                .map(j -> this.getVerticalSubSquare(blockI, j, layer))
+                                .flatMap(l -> l.stream())
+                                .collect(Collectors.toSet());
+    return result;
+  }
+
+  public Set<Square> getVerticalSubSquare(Integer blockI, Integer blockJ, Set<Integer> layers) {
+    Set<Square> result = layers.stream()
+                               .map(layer -> this.getVerticalSubSquare(blockI, blockJ, layer))
+                               .flatMap(l -> l.stream())
+                               .collect(Collectors.toSet());
+    return result;
   }
 
   /**
@@ -166,48 +291,7 @@ public class Grid {
    * @return See description.
    */
   public boolean isResolved() {
-    return this.coordToSquare.values().stream().map(Square::isResolved).allMatch(b -> b);
-  }
-
-  public static void main(String[] args) {
-    Grid grid = new Grid();
-
-    Constraints.addConstraints(grid);
-
-    grid.getSquare(1, 1).resolve(9);
-    grid.getSquare(6, 1).resolve(7);
-    grid.getSquare(7, 1).resolve(4);
-
-    grid.getSquare(2, 2).resolve(8);
-    grid.getSquare(5, 2).resolve(4);
-    grid.getSquare(8, 2).resolve(5);
-
-    grid.getSquare(3, 3).resolve(7);
-    grid.getSquare(9, 3).resolve(9);
-
-    grid.getSquare(4, 4).resolve(6);
-    grid.getSquare(9, 4).resolve(5);
-
-    grid.getSquare(2, 5).resolve(2);
-    grid.getSquare(5, 5).resolve(5);
-    grid.getSquare(8, 5).resolve(8);
-
-    grid.getSquare(1, 6).resolve(6);
-    grid.getSquare(6, 6).resolve(4);
-
-    grid.getSquare(1, 7).resolve(4);
-    grid.getSquare(7, 7).resolve(3);
-
-    grid.getSquare(2, 8).resolve(5);
-    grid.getSquare(5, 8).resolve(7);
-    grid.getSquare(8, 8).resolve(2);
-
-    grid.getSquare(3, 9).resolve(6);
-    grid.getSquare(4, 9).resolve(8);
-    grid.getSquare(9, 9).resolve(1);
-
-    System.out.println(grid.toString());
-    System.out.println(grid.isResolved() ? "Grid is resolved" : "Grid is _not_ resolved.");
+    return this.squares.stream().map(Square::isResolved).allMatch(b -> b);
   }
 
 }
