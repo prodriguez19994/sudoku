@@ -31,7 +31,7 @@ public class Constraints {
   }
 
   /**
-   * The sudoku rules says there shall not be the same number on vertical lines, horizontal lines and blocks. This function imposes this rule on all the 3x4 blocks.
+   * The sudoku rules says there shall not be the same number on vertical lines, horizontal lines and blocks. This function imposes this rule on all the 3x3 blocks.
    * 
    * @param grid
    *          The sudoku grid.
@@ -75,7 +75,7 @@ public class Constraints {
 
   public static void addOnlyMeLineConstraints(Grid grid) {
     for (Integer k : Square.RANGE_1_9) {
-      for (Grid.Direction d : Grid.Direction.values()) {
+      for (Direction d : Direction.values()) {
         Set<Square> lineSquares = grid.getLine(d, k);
         addOnlyMeConstraints(lineSquares);
       }

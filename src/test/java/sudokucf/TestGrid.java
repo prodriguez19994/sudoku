@@ -9,7 +9,7 @@ import org.testng.annotations.Test;
 
 public class TestGrid {
 
-  public static boolean isValid(Grid grid) {
+  public static boolean isValid(Grid grid) { // FIXME Move somewhere else.
 
     for (Integer i : Square.RANGE_1_9) {
       for (Integer j : Square.RANGE_1_9) {
@@ -29,9 +29,9 @@ public class TestGrid {
       if (!isLineValid.test(grid.getHorizontalLine(l))) { return false; }
     }
 
-    for (Integer i : Square.RANGE_1_3) {
-      for (Integer j : Square.RANGE_1_3) {
-        if (!isLineValid.test(grid.getBlock(i, j))) { return false; }
+    for (Integer blockI : Square.RANGE_1_3) {
+      for (Integer blockJ : Square.RANGE_1_3) {
+        if (!isLineValid.test(grid.getBlock(blockI, blockJ))) { return false; }
       }
     }
 
@@ -42,11 +42,6 @@ public class TestGrid {
   public void testResolve(Grid grid) {
     Constraints.addConstraints(grid);
 
-    if (!grid.isResolved()) {
-      System.err.println(grid.toString());
-    }
-
-    Assert.assertTrue(grid.isResolved());
-    Assert.assertTrue(isValid(grid), grid.toString());
+    TestConstraints.checkGrid(grid);
   }
 }

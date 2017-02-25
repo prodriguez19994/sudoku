@@ -4,17 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class Grid {
 
-  public enum Direction {
-    HORIZONTAL, VERTICAL
-  }
-
   private final List<Square> squares = new ArrayList<>();
 
+  private CompletableFuture<Void> resolved = null ;
+  
   public Grid() {
     // Building all the squares of the grid.
     Square.RANGE_1_9.stream().forEach(i -> {
@@ -22,6 +21,9 @@ public class Grid {
         this.squares.add(new Square(i, j));
       });
     });
+    
+    CompletableFuture[] squaresResolved = this.squares.stream().map(Square::getResolved).toArray(CompletableFuture[]::new);
+    this.resolved = CompletableFuture.allOf(squaresResolved);
   }
 
   /**
@@ -180,9 +182,9 @@ public class Grid {
    */
   public Set<Square> getHollowCross(Integer i, Integer j) {
     return this.getSquares(square -> {
-      boolean b0 = ((square.getI() > i) || (square.getI() < i)) && square.getJ().equals(j);
-      boolean b1 = ((square.getJ() > j) || (square.getJ() < j)) && square.getI().equals(i);
-      return b1 || b0;
+      boolean h = !(square.getI().equals(i)) && square.getJ().equals(j);
+      boolean v = !(square.getJ().equals(j)) && square.getI().equals(i);
+      return v || h;
     });
   }
 
@@ -290,8 +292,12 @@ public class Grid {
    * 
    * @return See description.
    */
-  public boolean isResolved() {
-    return this.squares.stream().map(Square::isResolved).allMatch(b -> b);
+  public boolean isDone() {
+    return this.resolved.isDone();
+  }
+  
+  public CompletableFuture<Void> getResolved(){
+    return this.resolved;
   }
 
 }

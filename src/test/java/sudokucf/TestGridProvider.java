@@ -63,8 +63,8 @@ public class TestGridProvider {
       rawLines.add(scanner.next());
     }
     scanner.close();
-
-    return rawLines.stream().filter(s -> !s.startsWith("#")).map(String::trim).collect(Collectors.toList());
+    
+    return rawLines.stream().map(s -> s.split("#")[0].trim()).filter(s -> !s.isEmpty()).map(String::trim).collect(Collectors.toList());
   }
 
   @DataProvider(name = NAME)
@@ -75,9 +75,12 @@ public class TestGridProvider {
     gridStrings.addAll(provideDiffcultGrids());
     gridStrings.addAll(provideDiabolicGrids());
 
-    gridStrings.addAll(provideGridsFromFile("/top95.txt"));
+    //gridStrings.addAll(provideGridsFromFile("/top95.txt"));
+    //gridStrings.addAll(provideGridsFromFile("/msk_009.txt"));
+    gridStrings.addAll(provideGridsFromFile("/colorku.txt"));
     //    gridStrings.add("123......456.....................................................................");
     //    gridStrings.add("12.......34.......56.............................................................");
+    //gridStrings.add("123456.............................7........8....................................");
 
     List<Grid> grids = gridStrings.stream().map(Grid::build).collect(Collectors.toList());
 
