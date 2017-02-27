@@ -12,8 +12,8 @@ public class Grid {
 
   private final List<Square> squares = new ArrayList<>();
 
-  private CompletableFuture<Void> resolved = null ;
-  
+  private CompletableFuture<Void> resolved = null;
+
   public Grid() {
     // Building all the squares of the grid.
     Square.RANGE_1_9.stream().forEach(i -> {
@@ -21,8 +21,10 @@ public class Grid {
         this.squares.add(new Square(i, j));
       });
     });
-    
-    CompletableFuture[] squaresResolved = this.squares.stream().map(Square::getResolved).toArray(CompletableFuture[]::new);
+
+    CompletableFuture[] squaresResolved = this.squares.stream()
+                                                      .map(Square::getResolved)
+                                                      .toArray(CompletableFuture[]::new);
     this.resolved = CompletableFuture.allOf(squaresResolved);
   }
 
@@ -60,8 +62,8 @@ public class Grid {
 
   public Square getSquare(Integer i, Integer j) {
     Square[] oneSquare = this.squares.stream()
-                                   .filter(square -> square.getI().equals(i) && square.getJ().equals(j))
-                                   .toArray(Square[]::new);
+                                     .filter(square -> square.getI().equals(i) && square.getJ().equals(j))
+                                     .toArray(Square[]::new);
     assert (oneSquare.length == 1);
     return oneSquare[0];
   }
@@ -247,43 +249,27 @@ public class Grid {
     });
   }
 
-  public Set<Square> getHorizontalSubSquare(Integer blockI, Integer blockJ, Integer layer) {
-    return getSubSquare(Direction.HORIZONTAL, blockI, blockJ, layer);
+  public Set<Square> getSubSquare(Direction direction, Integer blockI, Integer blockJ, Set<Integer> layers) {
+    Set<Square> result = layers.stream()
+                               .map(layer -> getSubSquare(direction, blockI, blockJ, layer))
+                               .flatMap(l -> l.stream())
+                               .collect(Collectors.toSet());
+    return result;
   }
 
-  public Set<Square> getVerticalSubSquare(Integer blockI, Integer blockJ, Integer layer) {
-    return getSubSquare(Direction.VERTICAL, blockI, blockJ, layer);
-  }
-
-  public Set<Square> getHorizontalSubSquare(Set<Integer> blockIs, Integer blockJ, Integer layer) {
+  public Set<Square> getSubSquare(Direction direction, Set<Integer> blockIs, Integer blockJ, Integer layer) {
     Set<Square> result = blockIs.stream()
-                                .map(i -> this.getHorizontalSubSquare(i, blockJ, layer))
+                                .map(i -> this.getSubSquare(direction, i, blockJ, layer))
                                 .flatMap(l -> l.stream())
                                 .collect(Collectors.toSet());
     return result;
   }
 
-  public Set<Square> getHorizontalSubSquare(Integer blockI, Integer blockJ, Set<Integer> layers) {
-    Set<Square> result = layers.stream()
-                               .map(layer -> this.getHorizontalSubSquare(blockI, blockJ, layer))
-                               .flatMap(l -> l.stream())
-                               .collect(Collectors.toSet());
-    return result;
-  }
-
-  public Set<Square> getVerticalSubSquare(Integer blockI, Set<Integer> blockJs, Integer layer) {
+  public Set<Square> getSubSquare(Direction direction, Integer blockI, Set<Integer> blockJs, Integer layer) {
     Set<Square> result = blockJs.stream()
-                                .map(j -> this.getVerticalSubSquare(blockI, j, layer))
+                                .map(blockJ -> this.getSubSquare(direction, blockI, blockJ, layer))
                                 .flatMap(l -> l.stream())
                                 .collect(Collectors.toSet());
-    return result;
-  }
-
-  public Set<Square> getVerticalSubSquare(Integer blockI, Integer blockJ, Set<Integer> layers) {
-    Set<Square> result = layers.stream()
-                               .map(layer -> this.getVerticalSubSquare(blockI, blockJ, layer))
-                               .flatMap(l -> l.stream())
-                               .collect(Collectors.toSet());
     return result;
   }
 
@@ -295,8 +281,8 @@ public class Grid {
   public boolean isDone() {
     return this.resolved.isDone();
   }
-  
-  public CompletableFuture<Void> getResolved(){
+
+  public CompletableFuture<Void> getResolved() {
     return this.resolved;
   }
 
