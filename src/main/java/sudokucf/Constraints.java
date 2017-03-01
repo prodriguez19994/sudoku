@@ -110,12 +110,12 @@ public class Constraints {
             Set<Square> impossibleSquares;
             Set<Square> otherSquares;
             if (Direction.HORIZONTAL.equals(direction)) {
-              impossibleSquares = grid.getSubSquare(Direction.HORIZONTAL, blockA, blockB, otherLayers);
-              otherSquares = grid.getSubSquare(Direction.HORIZONTAL, otherBlockAs, blockB, layer);
+              impossibleSquares = grid.getSubSquare(blockA, blockB, Direction.HORIZONTAL, otherLayers);
+              otherSquares = grid.getSubSquare(otherBlockAs, blockB, Direction.HORIZONTAL, layer);
             }
             else {
-              impossibleSquares = grid.getSubSquare(Direction.VERTICAL, blockB, blockA, otherLayers);
-              otherSquares = grid.getSubSquare(Direction.VERTICAL, blockB, otherBlockAs, layer);
+              impossibleSquares = grid.getSubSquare(blockB, blockA, Direction.VERTICAL, otherLayers);
+              otherSquares = grid.getSubSquare(blockB, otherBlockAs, Direction.VERTICAL, layer);
             }
 
             for (Integer value : Square.RANGE_1_9) {

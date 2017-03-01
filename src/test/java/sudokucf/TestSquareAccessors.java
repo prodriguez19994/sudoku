@@ -81,12 +81,12 @@ public class TestSquareAccessors {
     final Integer blockJ = 2;
     final Integer layer = 2;
 
-    Set<Square> horizontalSquares = grid.getSubSquare(Direction.HORIZONTAL, blockI, blockJ, layer);
+    Set<Square> horizontalSquares = grid.getSubSquare(blockI, blockJ, Direction.HORIZONTAL, layer);
     Assert.assertEquals(horizontalSquares.stream().filter(s -> s.getI().equals(7) && s.getJ().equals(5)).count(), 1L);
     Assert.assertEquals(horizontalSquares.stream().filter(s -> s.getI().equals(8) && s.getJ().equals(5)).count(), 1L);
     Assert.assertEquals(horizontalSquares.stream().filter(s -> s.getI().equals(9) && s.getJ().equals(5)).count(), 1L);
 
-    Set<Square> verticalSquares = grid.getSubSquare(Direction.VERTICAL, blockI, blockJ, layer);
+    Set<Square> verticalSquares = grid.getSubSquare(blockI, blockJ, Direction.VERTICAL, layer);
     Assert.assertEquals(verticalSquares.stream().filter(s -> s.getI().equals(8) && s.getJ().equals(4)).count(), 1L);
     Assert.assertEquals(verticalSquares.stream().filter(s -> s.getI().equals(8) && s.getJ().equals(5)).count(), 1L);
     Assert.assertEquals(verticalSquares.stream().filter(s -> s.getI().equals(8) && s.getJ().equals(6)).count(), 1L);

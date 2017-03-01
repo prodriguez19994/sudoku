@@ -16,15 +16,16 @@ public class Grid {
 
   public Grid() {
     // Building all the squares of the grid.
-    Square.RANGE_1_9.stream().forEach(i -> {
-      Square.RANGE_1_9.stream().forEach(j -> {
+    for (Integer i : Square.RANGE_1_9) {
+      for (Integer j : Square.RANGE_1_9) {
         this.squares.add(new Square(i, j));
-      });
-    });
+      }
+    }
 
     CompletableFuture[] squaresResolved = this.squares.stream()
                                                       .map(Square::getResolved)
                                                       .toArray(CompletableFuture[]::new);
+
     this.resolved = CompletableFuture.allOf(squaresResolved);
   }
 
@@ -71,15 +72,15 @@ public class Grid {
   public String list() {
     StringJoiner sj = new StringJoiner("\n");
 
-    Square.RANGE_1_9.stream().forEach(i -> {
-      Square.RANGE_1_9.stream().forEach(j -> {
+    for (Integer i : Square.RANGE_1_9) {
+      for (Integer j : Square.RANGE_1_9) {
         Square square = this.getSquare(i, j);
         String s = Square.RANGE_1_9.stream()
                                    .map(k -> square.isPossible(k) ? String.valueOf(k) : ".")
                                    .collect(Collectors.joining(""));
         sj.add("(" + i + ", " + j + ") " + s);
-      });
-    });
+      }
+    }
 
     return sj.toString();
 
@@ -209,6 +210,15 @@ public class Grid {
     });
   }
 
+  /**
+   * Returns the block containing the (<b>i</b>, <b>j</b>) square, but not the square itself.
+   * 
+   * @param i
+   *          The abscissa of the square.
+   * @param j
+   *          The ordinate of the square.
+   * @return The squares
+   */
   public Set<Square> getHollowBlock(Integer i, Integer j) {
     final int blockI = (i + 2) / 3;
     final int blockJ = (j + 2) / 3;
@@ -222,19 +232,19 @@ public class Grid {
   }
 
   /**
-   * Returns the squares <b>layer</b>th length-3 line of the (i, j) block. in case <b>direction</b> is horizontal, then the <b>layer</b> will be horizontal. Vertical in otherwise.
+   * Returns the squares <b>layer</b>th length-3 line of the (i, j) block. If <b>direction</b> is horizontal, then the <b>layer/squares</b> will be horizontal. Vertical in otherwise.
    * 
-   * @param direction
-   *          The layer direction.
    * @param blockI
    *          The 3x3 block coordinate (must be in [1;3]).
    * @param blockJ
    *          The 3x3 block coordinate (must be in [1;3]).
+   * @param direction
+   *          The layer direction (i.e. will the squares be vertical or horizontal?).
    * @param layer
-   *          The row we want (must be in [1;3]).
+   *          The column/row we want (must be in [1;3]).
    * @return The matching squares.
    */
-  public Set<Square> getSubSquare(Direction direction, Integer blockI, Integer blockJ, Integer layer) {
+  public Set<Square> getSubSquare(Integer blockI, Integer blockJ, Direction direction, Integer layer) {
     return getSquares(square -> {
       int blockCoordI = (square.getI() + 2) / 3;
       int blockCoordJ = (square.getJ() + 2) / 3;
@@ -249,25 +259,34 @@ public class Grid {
     });
   }
 
-  public Set<Square> getSubSquare(Direction direction, Integer blockI, Integer blockJ, Set<Integer> layers) {
+  /**
+   * See {@link Grid#getSubSquare(Integer, Integer, Direction, Integer) getSubSquare}.
+   */
+  public Set<Square> getSubSquare(Integer blockI, Integer blockJ, Direction direction, Set<Integer> layers) {
     Set<Square> result = layers.stream()
-                               .map(layer -> getSubSquare(direction, blockI, blockJ, layer))
+                               .map(layer -> getSubSquare(blockI, blockJ, direction, layer))
                                .flatMap(l -> l.stream())
                                .collect(Collectors.toSet());
     return result;
   }
 
-  public Set<Square> getSubSquare(Direction direction, Set<Integer> blockIs, Integer blockJ, Integer layer) {
+  /**
+   * See {@link Grid#getSubSquare(Integer, Integer, Direction, Integer) getSubSquare}.
+   */
+  public Set<Square> getSubSquare(Set<Integer> blockIs, Integer blockJ, Direction direction, Integer layer) {
     Set<Square> result = blockIs.stream()
-                                .map(i -> this.getSubSquare(direction, i, blockJ, layer))
+                                .map(i -> this.getSubSquare(i, blockJ, direction, layer))
                                 .flatMap(l -> l.stream())
                                 .collect(Collectors.toSet());
     return result;
   }
 
-  public Set<Square> getSubSquare(Direction direction, Integer blockI, Set<Integer> blockJs, Integer layer) {
+  /**
+   * See {@link Grid#getSubSquare(Integer, Integer, Direction, Integer) getSubSquare}.
+   */
+  public Set<Square> getSubSquare(Integer blockI, Set<Integer> blockJs, Direction direction, Integer layer) {
     Set<Square> result = blockJs.stream()
-                                .map(blockJ -> this.getSubSquare(direction, blockI, blockJ, layer))
+                                .map(blockJ -> this.getSubSquare(blockI, blockJ, direction, layer))
                                 .flatMap(l -> l.stream())
                                 .collect(Collectors.toSet());
     return result;
